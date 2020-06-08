@@ -1,20 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using AutoMapper;
-using Core.Interfaces;
+using eCommerceApp.API.Extensions;
 using eCommerceApp.API.Helpers;
+using eCommerceApp.API.Middleware;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace eCommerceApp.API
 {
@@ -32,18 +25,19 @@ namespace eCommerceApp.API
         {
             services.AddControllers();
             services.AddDbContext<StoreContext>(x => x.UseSqlite(_configuration.GetConnectionString("DefaultConnection")));
-            services.AddScoped<IProductRepository, ProductRepository>();
-            services.AddScoped(typeof(IGenericRepository<>), (typeof(GenericRepository<>)));
+
+            services.AddApplicationServices();
+
             services.AddAutoMapper(typeof(MappingProfiles));
+            services.AddSwaggerDocumentation();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
+            app.UseMiddleware<ExceptionMiddleware>();
+
+            app.UseStatusCodePagesWithReExecute("/errors/{0}");
 
             //This middleware is used to redirect any http requests to the actually https requests
             //Ex: you access http://localhost:54942/weatherforecast
@@ -56,6 +50,8 @@ namespace eCommerceApp.API
             app.UseStaticFiles();
 
             app.UseAuthorization();
+
+            app.UseSwaggerDocumentation();
 
             app.UseEndpoints(endpoints =>
             {
