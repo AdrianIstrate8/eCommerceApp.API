@@ -3,6 +3,7 @@ using eCommerceApp.API.Extensions;
 using eCommerceApp.API.Helpers;
 using eCommerceApp.API.Middleware;
 using Infrastructure.Data;
+using Infrastructure.Identity;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +28,11 @@ namespace eCommerceApp.API
             services.AddControllers();
             services.AddDbContext<StoreContext>(x => x.UseSqlite(_configuration.GetConnectionString("DefaultConnection")));
 
+            services.AddDbContext<AppIdentityDbContext>(x =>
+            {
+                x.UseSqlite(_configuration.GetConnectionString("IdentityConnection"));
+            });
+
             //this is used for connecting to Redis
             services.AddSingleton<IConnectionMultiplexer>(c =>
             {
@@ -35,6 +41,7 @@ namespace eCommerceApp.API
             });
 
             services.AddApplicationServices();
+            services.AddIdentityServices(_configuration);
 
             services.AddAutoMapper(typeof(MappingProfiles));
             services.AddSwaggerDocumentation();
@@ -65,6 +72,8 @@ namespace eCommerceApp.API
             app.UseStaticFiles();
 
             app.UseCors("CorsPolicy");
+
+            app.UseAuthentication();
 
             app.UseAuthorization();
 
